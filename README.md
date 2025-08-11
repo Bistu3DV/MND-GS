@@ -5,10 +5,9 @@ For the reconstruction of small indoor and outdoor scenes, we propose a multi-vi
 
 ## Installation
 
-The repository contains submodules, thus please check it out with 
 ```shell
-# SSH
-git clone git@github.com:zju3dv/PGSR.git
+
+git clone https://github.com/Bistu3DV/MND-GS.git
 cd MNDGS
 
 conda create -n mndgs python=3.8
@@ -44,39 +43,14 @@ data
     └── ...
 ```
 
-Then run the scripts to preprocess Tanks and Temples dataset:
-```shell
-# Install COLMAP
-Refer to https://colmap.github.io/install.html
-
-```
-
 ## Training and Evaluation
 ```shell
-# Fill in the relevant parameters in the script, then run it.
 
 # DTU dataset
 python scripts/run_dtu.py
 
 # Mip360 dataset
 python scripts/run_mip360.py
-```
-
-## Custom Dataset
-The data folder should like this:
-```shell
-data
-├── data_name1
-│   └── input
-│       ├── *.jpg/*.png
-│       └── ...
-├── data_name2
-└── ...
-```
-Then run the following script to preprocess the dataset and to train and test:
-```shell
-# Preprocess dataset
-python scripts/preprocess/convert.py --data_path your_data_path
 ```
 
 #### Some Suggestions:
