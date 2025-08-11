@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////////////  
-// Copyright 2023-2024 3D Vision Group at the State Key Lab of CAD&CG,   
-// Zhejiang University. All Rights Reserved.  
+// Copyright 2025-2026 3D Reconstruction Group at the Signal Processing and Intelligent Computing Innovation Team,   
+// Beijing Information Science and Technology University. All Rights Reserved.  
 //  
-// For more information see <https://github.com/zju3dv/PGSR>  
+// For more information see <https://github.com/Bistu3DV/MND-GS.git>  
 // If you use this software, please cite the corresponding publications    
 // listed on the above website.  
 //  
@@ -14,5 +14,5 @@
 // distribute, all copyright, patent, trademark, and attribution notices  
 // from the source form of this work.  
 //   
-// For commercial uses of this software, please send email to zhangguofeng@zju.edu.cn  
+// For commercial uses of this software, please send email to yananguo@bistu.edu.cn 
 ////////////////////////////////////////////////////////////////////////////
