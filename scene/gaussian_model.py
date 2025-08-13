@@ -555,112 +555,69 @@ class GaussianModel:
         pts = (pts-T)@R.transpose(-1,-2)
         return pts
     
-    ###
     def get_coord_from_depth(self, fov_camera, depth, valid_indices, scale=1):
         st = int(max(int(scale/2)-1,0))
-        # import pdb; pdb.set_trace()
-        # depth_view = depth
         rays_d = fov_camera.get_rays(scale=scale).reshape(-1, 3)
         rays_d_valid = rays_d[valid_indices]
-
-        # depth_view = depth_view[:rays_d.shape[0], :rays_d.shape[1]]
         coord = (rays_d_valid * depth[..., None]).reshape(-1,3)
         R = torch.tensor(fov_camera.R).float().cuda()
         T = torch.tensor(fov_camera.T).float().cuda()
         coord_in_world = (coord-T) @ R.transpose(-1,-2)
         return coord_in_world
     
-    ###
     def get_pixels_normal_in_depth_normal(self, fov_camera, depth_normal, pixels_valid, scale=1):
-        # 计算缩放后的起始索引，确保不会越界
         st = max(int(scale/2)-1,0)
-        # 根据缩放比例对深度图进行下采样
-        # import pdb; pdb.set_trace()
         normal_view = depth_normal[None,:,st::scale,st::scale]
-        # 计算缩放后的宽度和高度
         W, H = int(fov_camera.image_width/scale), int(fov_camera.image_height/scale)
-        # 裁剪深度图以适应缩放后的尺寸
         normal_view = normal_view[:H, :W]
-
         pixels_valid = pixels_valid.view(1, -1, 1, 2)
-        # 使用grid_sample从深度法线图中采样出对应点的法线值
         pixels_normal = torch.nn.functional.grid_sample(input=normal_view,
                                                 grid=pixels_valid,
                                                 mode='bilinear',
                                                 padding_mode='border',
                                                 align_corners=True
                                                 )[0, :, :, 0]
-        # 返回采样得到的法线值
-        # import pdb; pdb.set_trace()
         return pixels_normal
     
     def get_uv_normal_in_rendered_normal(self, fov_camera, rendered_normal, uv_valid, scale=1):
-        # 计算缩放后的起始索引，确保不会越界
         st = max(int(scale/2)-1,0)
-        # 根据缩放比例对深度图进行下采样
-        # import pdb; pdb.set_trace()
         normal_view = rendered_normal[None,:,st::scale,st::scale]
-        # 计算缩放后的宽度和高度
         W, H = int(fov_camera.image_width/scale), int(fov_camera.image_height/scale)
-        # 裁剪深度图以适应缩放后的尺寸
         normal_view = normal_view[:H, :W]
-
         uv_valid = uv_valid.view(1, -1, 1, 2)
-        # 使用grid_sample从深度法线图中采样出对应点的法线值
         uv_normal = torch.nn.functional.grid_sample(input=normal_view,
                                                 grid=uv_valid,
                                                 mode='bilinear',
                                                 padding_mode='border',
                                                 align_corners=True
                                                 )[0, :, :, 0]
-        # 返回采样得到的法线值
-        # import pdb; pdb.set_trace()
         return uv_normal
     
-        ###
     def get_uv_distance_in_rendered_distance(self, fov_camera, distance, uv_valid, scale=1):
-        # 计算缩放后的起始索引，确保不会越界
         st = max(int(scale/2)-1,0)
-        # 根据缩放比例对深度图进行下采样
-        # import pdb; pdb.set_trace()
         distance_view = distance[None,:,st::scale,st::scale]
-        # 计算缩放后的宽度和高度
         W, H = int(fov_camera.image_width/scale), int(fov_camera.image_height/scale)
-        # 裁剪深度图以适应缩放后的尺寸
         distance_view_cut = distance_view[:H, :W]
-
         uv_valid = uv_valid.view(1, -1, 1, 2)
-        # 使用grid_sample从深度法线图中采样出对应点的法线值
         uv_distance = torch.nn.functional.grid_sample(input=distance_view_cut,
                                                 grid=uv_valid,
                                                 mode='bilinear',
                                                 padding_mode='border',
                                                 align_corners=True
                                                 )[0, :, :, 0]
-        # 返回采样得到的法线值
-        # import pdb; pdb.set_trace()
         return uv_distance
     
 
     def get_uv_depth_in_plane_depth(self, fov_camera, plane_depth, uv_valid, scale=1):
-        # 计算缩放后的起始索引，确保不会越界
         st = max(int(scale/2)-1,0)
-        # 根据缩放比例对深度图进行下采样
-        # import pdb; pdb.set_trace()
         depth_view = plane_depth[None,:,st::scale,st::scale]
-        # 计算缩放后的宽度和高度
         W, H = int(fov_camera.image_width/scale), int(fov_camera.image_height/scale)
-        # 裁剪深度图以适应缩放后的尺寸
         depth_view_cut = depth_view[:H, :W]
-
         uv_valid = uv_valid.view(1, -1, 1, 2)
-        # 使用grid_sample从深度法线图中采样出对应点的法线值
         uv_depth = torch.nn.functional.grid_sample(input=depth_view_cut,
                                                 grid=uv_valid,
                                                 mode='bilinear',
                                                 padding_mode='border',
                                                 align_corners=True
                                                 )[0, :, :, 0]
-        # 返回采样得到的法线值
-        # import pdb; pdb.set_trace()
         return uv_depth

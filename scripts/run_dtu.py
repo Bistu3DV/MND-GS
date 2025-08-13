@@ -1,11 +1,12 @@
 import os
 
 scenes = [24, 37, 40, 55, 63, 65, 69, 83, 97, 105, 106, 110, 114, 118, 122]
-data_base_path='dtu'
+# data_base_path='dtu'
+data_base_path='/workspace/dtudata/dtu_data/DTU'
 out_base_path='output_dtu'
-eval_path='dtu_eval'
+eval_path='/workspace/dtudata/dtu_eval'
 out_name='test'
-gpu_id=2
+gpu_id=0
 
 for scene in scenes:
     cmd = f'rm -rf {out_base_path}/dtu_scan{scene}/{out_name}/*'

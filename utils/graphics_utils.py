@@ -195,16 +195,10 @@ def patch_warp(H, uv):
     grid = grid_tmp[..., :2] / (grid_tmp[..., 2:] + 1e-10)
     return grid
 
-###
 def pixels_warp(H, uv):
-    # import pdb; pdb.set_trace()
-    N = uv.shape[0]  # 点的数量
-    # 创建一个形状为 [N, 1] 的张量
+    N = uv.shape[0] 
     ones = torch.ones((N, 1), device=uv.device)
-    # 将 uv 坐标与 ones 张量在最后一个维度上拼接，形成齐次坐标 (x, y, 1)
     homo_uv = torch.cat((uv, ones), dim=-1)
-    
-    grid_tmp = (H @ homo_uv.unsqueeze(-1)).squeeze(-1)  # [N, 3, 3] @ [N, 3, 1] -> [N, 3]
-    #  (x'/z', y'/z')
+    grid_tmp = (H @ homo_uv.unsqueeze(-1)).squeeze(-1) 
     grid = grid_tmp[:, :2] / (grid_tmp[:, 2:] + 1e-10)
     return grid

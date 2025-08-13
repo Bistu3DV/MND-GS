@@ -117,10 +117,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     ema_single_view_for_log = 0.0
     ema_multi_view_geo_for_log = 0.0
     ema_multi_view_pho_for_log = 0.0
-    #
     ema_depth_normal_01_loss_for_log = 0.0
     ema_distance_01_loss_for_log = 0.0
-    # ema_pd_01_loss_for_log = 0.0
 
     normal_loss, geo_loss, ncc_loss, depth_normal_01_loss, distance_01_loss, pd_01_loss = None, None, None, None, None, None
     progress_bar = tqdm(range(first_iter, opt.iterations), desc="Training progress")
@@ -213,7 +211,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 pixel_noise_th = opt.multi_view_pixel_noise_th
                 total_patch_size = (patch_size * 2 + 1) ** 2
                 ncc_weight = opt.multi_view_ncc_weight
-                geo_weight = opt.multi_view_geo_weight
+                # geo_weight = opt.multi_view_geo_weight
                 ## compute geometry consistency mask and loss
                 H, W = render_pkg['plane_depth'].squeeze().shape
                 ix, iy = torch.meshgrid(
@@ -222,7 +220,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
                 nearest_render_pkg = render(nearest_cam, gaussians, pipe, bg, app_model=app_model,
                                             return_plane=True, return_depth_normal=True)
-                #
+
                 # import pdb; pdb.set_trace()
                 pts = gaussians.get_points_from_depth(viewpoint_cam, render_pkg['plane_depth'])
                 pts_in_nearest_cam = pts @ nearest_cam.world_view_transform[:3,:3] + nearest_cam.world_view_transform[3,:3]
@@ -273,10 +271,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     cv2.imwrite(os.path.join(debug_path, "%05d"%iteration + "_" + viewpoint_cam.image_name + ".jpg"), image_to_show)
 
                 if d_mask.sum() > 0:
-                    geo_loss = geo_weight * ((weights * pixel_noise)[d_mask]).mean()
-                    loss = loss + geo_loss
-
-
+                    # geo_loss = geo_weight * ((weights * pixel_noise)[d_mask]).mean()
+                    # loss = loss + geo_loss
 
                     if use_virtul_cam is False:
                         with torch.no_grad():
@@ -306,13 +302,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                         ## compute Homography
                         ref_local_n = render_pkg["rendered_normal"].permute(1,2,0)
                         ref_local_n = ref_local_n.reshape(-1,3)[valid_indices]
-
                         ref_local_d = render_pkg['rendered_distance'].squeeze()
-                        # rays_d = viewpoint_cam.get_rays()
-                        # rendered_normal2 = render_pkg["rendered_normal"].permute(1,2,0).reshape(-1,3)
-                        # ref_local_d = render_pkg['plane_depth'].view(-1) * ((rendered_normal2 * rays_d.reshape(-1,3)).sum(-1).abs())
-                        # ref_local_d = ref_local_d.reshape(*render_pkg['plane_depth'].shape)
-
                         ref_local_d = ref_local_d.reshape(-1)[valid_indices]
                         H_ref_to_neareast = ref_to_neareast_r[None] - \
                             torch.matmul(ref_to_neareast_t[None,:,None].expand(ref_local_d.shape[0],3,1), 
@@ -338,154 +328,66 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                             ncc_loss = ncc_weight * ncc.mean()
                             loss = loss + ncc_loss
 
-
-
-
-
-                        # jiabo
-                        # import pdb; pdb.set_trace()
                         # compute multi_view depth_normal_01_loss
                         depth0_normal0 = render_pkg["depth_normal"]
                         pixels_0 = torch.stack([ix, iy], dim=-1).float().to(depth0_normal0.device)
-                        pixels_0_valid = pixels_0.reshape(-1,2)[valid_indices]  # 根据有效索引重新排列像素坐标
-                        pixels_1_valid = pixels_warp(H_ref_to_neareast.reshape(-1,3,3), pixels_0_valid)  # 使用单应性矩阵对原始像素进行变换  
-                        pixels_0_valid[:, 0] = 2 * pixels_0_valid[:, 0] / (W - 1) - 1.0  # 将x坐标归一化到[-1,1]  
-                        pixels_0_valid[:, 1] = 2 * pixels_0_valid[:, 1] / (H - 1) - 1.0  # 将y坐标归一化到[-1,1]  
+                        pixels_0_valid = pixels_0.reshape(-1,2)[valid_indices]
+                        pixels_1_valid = pixels_warp(H_ref_to_neareast.reshape(-1,3,3), pixels_0_valid) 
+                        pixels_0_valid[:, 0] = 2 * pixels_0_valid[:, 0] / (W - 1) - 1.0  
+                        pixels_0_valid[:, 1] = 2 * pixels_0_valid[:, 1] / (H - 1) - 1.0  
                         depth0_normal0_valid = gaussians.get_pixels_normal_in_depth_normal(viewpoint_cam, depth0_normal0, pixels_0_valid) 
-                        R0 = torch.tensor(viewpoint_cam.R).float().cuda()  # 获取最近相机的旋转矩阵并移到GPU  
-                        # T0 = torch.tensor(viewpoint_cam.T).float().cuda()  # 获取最近相机的平移向量并移到GPU  
-                        depth0_normal0_valid_T = depth0_normal0_valid.T  # 形状变为 (102400, 3)
+                        R0 = torch.tensor(viewpoint_cam.R).float().cuda() 
+                        depth0_normal0_valid_T = depth0_normal0_valid.T 
                         dn0_valid = depth0_normal0_valid_T@R0.transpose(-1,-2) 
                         dn_valid_0 = dn0_valid.T
 
                         depth1_normal1 = nearest_render_pkg["depth_normal"]
-                        pixels_1_valid[:, 0] = 2 * pixels_1_valid[:, 0] / (W - 1) - 1.0  # 将x坐标归一化到[-1,1]  
-                        pixels_1_valid[:, 1] = 2 * pixels_1_valid[:, 1] / (H - 1) - 1.0  # 将y坐标归一化到[-1,1]  
-                        depth1_normal1_valid = gaussians.get_pixels_normal_in_depth_normal(nearest_cam, depth1_normal1, pixels_1_valid)  # 在最近的相机的深度法线图中找到对应的法线并生成掩码  
-                        R1 = torch.tensor(nearest_cam.R).float().cuda()  # 获取最近相机的旋转矩阵并移到GPU  
-                        # T1 = torch.tensor(nearest_cam.T).float().cuda()  # 获取最近相机的平移向量并移到GPU  
-                        depth1_normal1_valid_T = depth1_normal1_valid.T  # 形状变为 (102400, 3)
+                        pixels_1_valid[:, 0] = 2 * pixels_1_valid[:, 0] / (W - 1) - 1.0 
+                        pixels_1_valid[:, 1] = 2 * pixels_1_valid[:, 1] / (H - 1) - 1.0 
+                        depth1_normal1_valid = gaussians.get_pixels_normal_in_depth_normal(nearest_cam, depth1_normal1, pixels_1_valid) 
+                        R1 = torch.tensor(nearest_cam.R).float().cuda() 
+                        depth1_normal1_valid_T = depth1_normal1_valid.T 
                         dn1_valid = depth1_normal1_valid_T@R1.transpose(-1,-2) 
                         dn_valid_1 = dn1_valid.T
-                        # 计算法线余弦角？
-                        # import pdb; pdb.set_trace()
 
-                        # diff_sum = (dn_valid_0 - dn_valid_1).abs().sum(0)
-                        # # 对张量进行排序
-                        # sorted_diff_sum, _ = torch.sort(diff_sum)
-                        # # 计算中位数
-                        # n = diff_sum.numel()  # 获取张量中的元素数量
-                        # median = None
-                        # if n % 2 == 1:
-                        #     # 如果元素数量是奇数，中位数是中间的那个元素
-                        #     median = sorted_diff_sum[n // 2]
-                        # else:
-                        #     # 如果元素数量是偶数，中位数是中间两个元素的平均值
-                        #     median = (sorted_diff_sum[n // 2 - 1] + sorted_diff_sum[n // 2]) / 2
-                        # print(median)
-                        # # scan122 0.1247 1.2747 1.4179 1.4815 1.0114 1.4903 0.1129 1.4181 0.2694
-                        # # scan65 1.4134 1.3890 1.3712 1.3471 1.0806 1.0796 1.1263 0.5347 0.1910 1.3610 1.3407
-
-
-
-                        # dn_mask = (depth0_normal0_valid - depth1_normal1_valid).abs().sum(0) < dn_noise_th
                         dn_mask = (dn_valid_0 - dn_valid_1).abs().sum(0) < 0.52
-                        # scan122
-                        # 0.8 0.33676942342012983 1 0.3366944878008501 1.2 0.33517956663682136 1.5 0.3328736850139251 
-                        # 1.7 0.3328835666971438 1.9 0.33058022223996963 2 0.33240557373060065 2.3 0.33292113119138333
-
-                        # scan65 
-                        # 0.8 0.6058430273824661 1 0.6060768905622127 1.2 0.6501554445015649 1.5 0.6336188789138292 
-                        # 1.8 0.6354486129005621
-
-
-
                         weight = opt.single_view_weight
                         image_weight0 = (1.0 - get_img_grad_weight(gt_image))
-                        # import pdb; pdb.set_trace()
                         image_weight1 = image_weight0.reshape(-1)[valid_indices]
                         image_weight2 = image_weight1 * dn_mask
                         image_weight2[~dn_mask] = 0
                         image_weight = (image_weight2).clamp(0,1).detach() ** 2
                         if not opt.wo_image_weight:
-                            # image_weight = erode(image_weight[None,None]).squeeze()
                             depth_normal_01_loss = weight * (image_weight * ((dn_valid_0 - dn_valid_1).abs().sum(0))).mean()
                         else:
                             depth_normal_01_loss = weight * (((dn_valid_0 - dn_valid_1)).abs().sum(0)).mean()
                         loss = loss + depth_normal_01_loss
 
-
-                            
-                        # jiabo
+                        # compute multi_view distance_01_loss
                         rendered_pd0 = render_pkg["plane_depth"]
                         uv_0 = torch.stack([ix, iy], dim=-1).float().to(rendered_pd0.device)
-                        uv_0_valid = uv_0.reshape(-1,2)[valid_indices]  # 根据有效索引重新排列像素坐标
-                        uv_1_valid = pixels_warp(H_ref_to_neareast.reshape(-1,3,3), uv_0_valid)  # 使用单应性矩阵对原始像素进行变换  
-                        uv_0_valid[:, 0] = 2 * uv_0_valid[:, 0] / (W - 1) - 1.0  # 将x坐标归一化到[-1,1]  
-                        uv_0_valid[:, 1] = 2 * uv_0_valid[:, 1] / (H - 1) - 1.0  # 将y坐标归一化到[-1,1]  
+                        uv_0_valid = uv_0.reshape(-1,2)[valid_indices] 
+                        uv_1_valid = pixels_warp(H_ref_to_neareast.reshape(-1,3,3), uv_0_valid) 
+                        uv_0_valid[:, 0] = 2 * uv_0_valid[:, 0] / (W - 1) - 1.0 
+                        uv_0_valid[:, 1] = 2 * uv_0_valid[:, 1] / (H - 1) - 1.0 
                         rendered_pd0_valid = gaussians.get_uv_depth_in_plane_depth(viewpoint_cam, rendered_pd0, uv_0_valid) 
-                        coord0_world_valid = gaussians.get_coord_from_depth(viewpoint_cam, rendered_pd0_valid, valid_indices)  # 从当前视图的深度图中反投影点到三维  
-                        coord0_in_nearest_cam = coord0_world_valid @ nearest_cam.world_view_transform[:3,:3] + nearest_cam.world_view_transform[3,:3]  # 将点转换到最近的相机坐标系  
+                        coord0_world_valid = gaussians.get_coord_from_depth(viewpoint_cam, rendered_pd0_valid, valid_indices) 
+                        coord0_in_nearest_cam = coord0_world_valid @ nearest_cam.world_view_transform[:3,:3] + nearest_cam.world_view_transform[3,:3]  
                         
                         normal1 = nearest_render_pkg["rendered_normal"]
-                        uv_1_valid[:, 0] = 2 * uv_1_valid[:, 0] / (W - 1) - 1.0  # 将x坐标归一化到[-1,1]  
-                        uv_1_valid[:, 1] = 2 * uv_1_valid[:, 1] / (H - 1) - 1.0  # 将y坐标归一化到[-1,1]  
+                        uv_1_valid[:, 0] = 2 * uv_1_valid[:, 0] / (W - 1) - 1.0 
+                        uv_1_valid[:, 1] = 2 * uv_1_valid[:, 1] / (H - 1) - 1.0  
                         normal1_valid = gaussians.get_uv_normal_in_rendered_normal(viewpoint_cam, normal1, uv_1_valid) 
                         normal1_valid_transposed = normal1_valid.T
-                        # import pdb; pdb.set_trace()
                         distance_0_to_1_valid = torch.sum(coord0_in_nearest_cam * normal1_valid_transposed, dim=1).abs().unsqueeze(0)
-
                         rendered_distance1 = nearest_render_pkg["rendered_distance"] 
-                        rendered_distance1_valid = gaussians.get_uv_distance_in_rendered_distance(nearest_cam, rendered_distance1, uv_1_valid)  # 在最近的相机的深度图中找到对应的深度并生成掩码  
-                        
-                        # import pdb; pdb.set_trace()
-                        # diff_sum = (distance_0_to_1_valid - rendered_distance1_valid).abs().sum(0)
-                        # # 对张量进行排序
-                        # sorted_diff_sum, _ = torch.sort(diff_sum)
-                        # # 计算中位数
-                        # n = diff_sum.numel()  # 获取张量中的元素数量
-                        # median = None
-                        # if n % 2 == 1:
-                        #     # 如果元素数量是奇数，中位数是中间的那个元素
-                        #     median = sorted_diff_sum[n // 2]
-                        # else:
-                        #     # 如果元素数量是偶数，中位数是中间两个元素的平均值
-                        #     median = (sorted_diff_sum[n // 2 - 1] + sorted_diff_sum[n // 2]) / 2
-                        # print(median)
-                        # # scan122 dnmask 1.9
-                        # # 0.0191 0.0424 0.2431 0.3932 0.1477 0.1376 0.0209 0.1749 0.2529 0.1891
-                        # # scan65 dnmask 1
-                        # # 0.0975 0.1197 0.4644 0.3490 0.4904 0.5124 0.1334 0.2102 0.0713
-                        
-                        # 计算每个元素表示对应坐标点之间差异
+                        rendered_distance1_valid = gaussians.get_uv_distance_in_rendered_distance(nearest_cam, rendered_distance1, uv_1_valid) 
                         distance_mask = (distance_0_to_1_valid - rendered_distance1_valid).abs().sum(0) < 0.03
-                        # 0.15 0.33606325934667813 0.2 0.33423037979370873 0.5 0.33688411292122633 1 0.33605794517975635 3 0.33800320435597075 5 0.33578844747196746
-
-
-                        # scan65 dnmask 1 (0.6133213576648497)
-                        # +distance_mask 
-                        # 0.1 0.6499996894730213 0.05
-
-                        # 按三维点差异计算权重
                         distance_weights = (1.0 / torch.exp((distance_0_to_1_valid - rendered_distance1_valid).abs().sum(0))).detach()
                         distance_weights[~distance_mask] = 0
-                        # import pdb; pdb.set_trace()
-                        # distance_weights = image_weight1 * distance_mask
-                        # distance_weights[~distance_mask] = 0
                         distance_weight = opt.multi_view_distance_weight
                         distance_01_loss = distance_weight * ((distance_weights * (distance_0_to_1_valid - rendered_distance1_valid).abs().sum(0))[distance_mask]).mean()
                         loss = loss + distance_01_loss 
-
-
-
-        # try:
-        #     # 这里是可能会导致异常的代码
-        #     loss.backward()
-        # except RuntimeError as e:
-        #     print(e)
-        #     # 打印详细的回溯
-        #     import traceback
-        #     traceback.print_exc()
 
         loss.backward()
         iter_end.record()
@@ -496,10 +398,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             ema_single_view_for_log = 0.4 * normal_loss.item() if normal_loss is not None else 0.0 + 0.6 * ema_single_view_for_log
             ema_multi_view_geo_for_log = 0.4 * geo_loss.item() if geo_loss is not None else 0.0 + 0.6 * ema_multi_view_geo_for_log
             ema_multi_view_pho_for_log = 0.4 * ncc_loss.item() if ncc_loss is not None else 0.0 + 0.6 * ema_multi_view_pho_for_log
-            #
             ema_depth_normal_01_loss_for_log = 0.4 * depth_normal_01_loss.item() if depth_normal_01_loss is not None else 0.0 + 0.6 * ema_depth_normal_01_loss_for_log
             ema_distance_01_loss_for_log = 0.4 * distance_01_loss.item() if distance_01_loss is not None else 0.0 + 0.6 * ema_distance_01_loss_for_log
-            # ema_pd_01_loss_for_log = 0.4 * pd_01_loss.item() if pd_01_loss is not None else 0.0 + 0.6 * ema_pd_01_loss_for_log
             
             if iteration % 10 == 0:
                 loss_dict = {
@@ -507,10 +407,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     "Single": f"{ema_single_view_for_log:.{4}f}",
                     "Geo": f"{ema_multi_view_geo_for_log:.{4}f}",
                     "Pho": f"{ema_multi_view_pho_for_log:.{4}f}",
-                    #
                     "normal_01": f"{ema_depth_normal_01_loss_for_log:.{4}f}",
                     "distance_01": f"{ema_distance_01_loss_for_log:.{4}f}",
-                    # "pd_01": f"{ema_pd_01_loss_for_log:.{4}f}",
                     "Points": f"{len(gaussians.get_xyz)}"
                 }
                 progress_bar.set_postfix(loss_dict)
