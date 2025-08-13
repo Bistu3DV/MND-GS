@@ -73,3 +73,20 @@ python render.py -m out_path --max_depth 10.0 --voxel_size 0.01
 
 ## Acknowledgements
 This project is built upon [3DGS](https://github.com/graphdeco-inria/gaussian-splatting). Densify is based on [AbsGau](https://ty424.github.io/AbsGS.github.io/) and [GOF](https://github.com/autonomousvision/gaussian-opacity-fields?tab=readme-ov-file). The single-view normal loss and multi-view consistency constraint are based on [PGSR](https://github.com/zju3dv/PGSR). DTU dataset preprocess are based on [Neuralangelo scripts](https://github.com/NVlabs/neuralangelo/blob/main/DATA_PROCESSING.md). Evaluation scripts for DTU dataset are based on [DTUeval-python](https://github.com/jzhangbs/DTUeval-python). Thank you to all authors for their valuable work and shared repositories.
+
+
+## Citation
+
+If you find this code useful for your research, please use the following BibTeX entry.
+
+```bibtex
+@misc{jia2025multiviewnormaldistanceguidance,
+      title={Multi-view Normal and Distance Guidance Gaussian Splatting for Surface Reconstruction}, 
+      author={Bo Jia and Yanan Guo and Ying Chang and Benkui Zhang and Ying Xie and Kangning Du and Lin Cao},
+      year={2025},
+      eprint={2508.07701},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2508.07701}, 
+}
+```
