@@ -78,7 +78,7 @@ This project is built upon [3DGS](https://github.com/graphdeco-inria/gaussian-sp
 ## Citation
 
 If you find this code useful for your research, please use the following BibTeX entry.
-
+<!-- 
 ```bibtex
 @misc{jia2025multiviewnormaldistanceguidance,
       title={Multi-view Normal and Distance Guidance Gaussian Splatting for Surface Reconstruction}, 
@@ -88,5 +88,13 @@ If you find this code useful for your research, please use the following BibTeX 
       archivePrefix={arXiv},
       primaryClass={cs.CV},
       url={https://arxiv.org/abs/2508.07701}, 
+}
+``` -->
+```bibtex
+@article{jia2025multi,
+  title={Multi-view Normal and Distance Guidance Gaussian Splatting for Surface Reconstruction},
+  author={Jia, Bo and Guo, Yanan and Chang, Ying and Zhang, Benkui and Xie, Ying and Du, Kangning and Cao, Lin},
+  journal={arXiv preprint arXiv:2508.07701},
+  year={2025}
 }
 ```
